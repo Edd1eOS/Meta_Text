@@ -20,7 +20,7 @@ def analyze_text_callback():
         return
         
     try:
-        # 运行分析器
+        # Run analyzer
         result = subprocess.run(
             ["./text_analyzer.exe"],
             input=text,
@@ -29,10 +29,10 @@ def analyze_text_callback():
             encoding="utf-8"
         )
         
-        # 显示结果
+        # Display results
         dpg.set_value("analysis_output", result.stdout)
         
-        # 提取text_id
+        # Extract text_id
         lines = result.stdout.split('\n')
         for line in lines:
             if "Text ID:" in line:
@@ -71,18 +71,18 @@ def file_dialog_callback(sender, app_data):
         dpg.set_value("status_text", f"Failed to load file: {str(e)}")
 
 def load_file_callback():
-    """加载文件回调函数"""
-    # 显示文件对话框
+    """Load file callback function"""
+    # Show file dialog
     dpg.show_item("file_dialog")
 
 def clear_text_callback():
-    """清空文本回调函数"""
+    """Clear text callback function"""
     dpg.set_value("input_text", "")
     dpg.set_value("analysis_output", "")
     dpg.set_value("status_text", "Text cleared")
 
 def generate_visualizations_callback():
-    """生成可视化回调函数"""
+    """Generate visualizations callback function"""
     global text_id
     text_id_str = dpg.get_value("text_id_input")
     output_dir = dpg.get_value("output_dir_input")
@@ -97,12 +97,12 @@ def generate_visualizations_callback():
         dpg.set_value("status_text", "Text ID must be a number.")
         return
     
-    # 使用默认值 . 如果没有指定输出目录
+    # Use default value "." if no output directory is specified
     if not output_dir:
         output_dir = "."
         
     try:
-        # 检查数据库中是否存在该text_id
+        # Check if the text_id exists in the database
         conn = sqlite3.connect(analysis_db)
         cursor = conn.execute("SELECT COUNT(*) FROM texts WHERE id = ?", (text_id,))
         count = cursor.fetchone()[0]
@@ -112,7 +112,7 @@ def generate_visualizations_callback():
             dpg.set_value("status_text", f"No text found with ID {text_id}")
             return
             
-        # 运行可视化脚本，包含输出目录参数
+        # Run visualization script with output directory parameter
         result = subprocess.run(
             [sys.executable, "vis.py", str(text_id), output_dir],
             capture_output=True,
@@ -121,7 +121,7 @@ def generate_visualizations_callback():
         
         if result.returncode == 0:
             dpg.set_value("status_text", f"Visualizations generated for Text ID {text_id} in {output_dir}")
-            # 在实际实现中，这里应该显示生成的图像
+            # In actual implementation, generated images should be displayed here
         else:
             dpg.set_value("status_text", f"Visualization failed:\n{result.stderr}")
             
@@ -129,42 +129,42 @@ def generate_visualizations_callback():
         dpg.set_value("status_text", f"Visualization failed:\n{str(e)}")
 
 def select_output_directory():
-    """选择输出目录的回调函数"""
-    # 获取当前输出目录作为初始目录
+    """Select output directory callback function"""
+    # Get current output directory as initial directory
     current_dir = dpg.get_value("output_dir_input")
     if not current_dir or not os.path.exists(current_dir):
         current_dir = "."
     
-    # Dear PyGui 没有内置的目录选择对话框，我们使用 tkinter 的
+    # Dear PyGui doesn't have a built-in directory selection dialog, so we use tkinter's
     import tkinter as tk
     from tkinter import filedialog
     root = tk.Tk()
-    root.withdraw()  # 隐藏主窗口
+    root.withdraw()  # Hide main window
     directory = filedialog.askdirectory(initialdir=current_dir, title="Select Output Directory")
     if directory:
         dpg.set_value("output_dir_input", directory)
     root.destroy()
 
 def refresh_database_info():
-    """刷新数据库信息"""
+    """Refresh database information"""
     try:
         conn = sqlite3.connect(analysis_db)
         
-        # 获取文本总数
+        # Get total number of texts
         cursor = conn.execute("SELECT COUNT(*) FROM texts")
         texts_count = cursor.fetchone()[0]
         
-        # 获取tokens总数
+        # Get total number of tokens
         cursor = conn.execute("SELECT COUNT(*) FROM tokens")
         tokens_count = cursor.fetchone()[0]
         
-        # 获取最新的文本ID
+        # Get latest text IDs
         cursor = conn.execute("SELECT id, LENGTH(content) FROM texts ORDER BY id DESC LIMIT 5")
         latest_texts = cursor.fetchall()
         
         conn.close()
         
-        # 显示信息
+        # Display information
         info = f"Database: {analysis_db}\n"
         info += f"Total texts analyzed: {texts_count}\n"
         info += f"Total tokens: {tokens_count}\n\n"
@@ -179,7 +179,7 @@ def refresh_database_info():
         dpg.set_value("database_info", f"Failed to get database info:\n{str(e)}")
 
 def refresh_available_ids():
-    """刷新可用ID列表"""
+    """Refresh available IDs list"""
     try:
         conn = sqlite3.connect(analysis_db)
         cursor = conn.execute("SELECT id FROM texts ORDER BY id DESC LIMIT 10")
@@ -194,12 +194,12 @@ def refresh_available_ids():
         dpg.set_value("available_ids", f"Error: {str(e)}")
 
 # ==================== 可自定义部分 1: 文件对话框 ====================
-# 创建文件对话框
+# Create file dialog
 with dpg.file_dialog(directory_selector=False, show=False, callback=file_dialog_callback, tag="file_dialog", width=700, height=400):
     dpg.add_file_extension(".*")
     dpg.add_file_extension(".txt", color=(0, 255, 0, 255), custom_text="[Text files]")
     dpg.add_file_extension(".log", color=(255, 255, 0, 255), custom_text="[Log files]")
-# ==================== 文件对话框结束 ====================
+# ==================== File Dialog End ====================
 
 # 创建主窗口
 with dpg.window(label="Text Analyzer", width=1000, height=700, tag="main_window"):
@@ -283,15 +283,15 @@ with dpg.window(label="Text Analyzer", width=1000, height=700, tag="main_window"
             refresh_database_info()
     # ==================== 主内容区域结束 ====================
 
-# 创建视口
+# Create viewport
 dpg.create_viewport(title="Text Analyzer GUI", width=1050, height=750)
 
-# 设置并显示GUI
+# Setup and show GUI
 dpg.setup_dearpygui()
 dpg.show_viewport()
 
-# 启动主循环
+# Start main loop
 dpg.start_dearpygui()
 
-# 销毁上下文
+# Destroy context
 dpg.destroy_context()

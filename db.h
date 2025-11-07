@@ -5,7 +5,7 @@
 
 #include <sqlite3.h>
 #include <stdio.h>
-#define DB_PATH "data.db"
+#define DB_PATH "analysis.db"
 
 int db_init(const char *db_path);/*initialize the database*/
 
