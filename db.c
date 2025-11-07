@@ -1,4 +1,4 @@
-#include <db.h>
+#include "db.h"
 #include <stdio.h>
 
 static sqlite3 *db = NULL; /*The global handle, no need to define later*/
@@ -89,7 +89,7 @@ int db_insert_token(int text_id, const char *token, int position){
 
 int db_insert_stats(int text_id, int token_count, int avg_len, int max_len, int min_len){
     const char *sql = "INSERT INTO stats (text_id, token_count, avg_len, max_len, min_len) VALUES (?, ?, ?, ?, ?);";
-    sqlite3_stmt *stmt;
+    sqlite3_stmt *stmt; /*define a handle for the prepared statement*/
     int rc;
     rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
     if (rc != SQLITE_OK) {

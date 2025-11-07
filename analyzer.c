@@ -32,15 +32,3 @@ int tokenize(char *intext)
     }
     return count;
 }
-int main()
-{
-    /*get input*/
-    char intext[256];
-    printf("Enter text: ");
-    fgets(intext, sizeof(intext), stdin);
-
-    tokenize(intext);
-
-
-    return 0;
-}
