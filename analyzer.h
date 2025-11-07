@@ -8,6 +8,6 @@
 #define MAX_TOKENS 3000
 #define MAX_TOKEN_LEN 64
 
-int tokenize(char *intext);
+int tokenize_with_id(char *intext, int text_id);
 
-#endif 
+#endif

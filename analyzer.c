@@ -2,11 +2,10 @@
 #include <stdlib.h> /*dynamic allocation*/
 #include <string.h> /*string*/
 #include <ctype.h>  /*string assertion*/
+#include "db.h"     /*database API*/
 
-int tokenize(char *intext)
+int tokenize_with_id(char *intext, int text_id)
 {
-/*initialize an array to put tokens*/
-    char tokens[3000][64];
     int count = 0;
 
     /*get first token*/
@@ -15,20 +14,18 @@ int tokenize(char *intext)
     /*continue getting tokens*/
     while (token != NULL && count < 3000)
     {
-        /*copy token to array*/
-        strncpy(tokens[count], token, 63);
-        tokens[count][63] = '\0'; /* ensure null termination */
+        /*save token to database*/
+        int result = db_insert_token(text_id, token, count+1);
+        if (result < 0) {
+            fprintf(stderr, "Failed to save token to database\n");
+            return -1;
+        }
+        
         count++;
-
         /*get next token*/
         token = strtok(NULL, " ,.\n");
     }
 
-    /*print tokens for verification*/
-    printf("\nFound %d tokens:\n", count);
-    for (int i = 0; i < count; i++)
-    {
-        printf("%d: %s\n", i + 1, tokens[i]);
-    }
+    printf("\nFound and saved %d tokens\n", count);
     return count;
 }

@@ -58,7 +58,7 @@ int db_insert_text(const char *text){
         return -1;
     }
     sqlite3_finalize(stmt);
-    return 0;
+    return (int)sqlite3_last_insert_rowid(db);
 };/*insert a new text into the database*/
 
 int db_insert_token(int text_id, const char *token, int position){
