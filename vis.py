@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 import os
+from wordcloud import WordCloud
+import matplotlib.font_manager as fm
 
 def generate_word_frequency_chart(text_id, output_dir="."):
     """Generate word frequency chart"""
@@ -32,7 +34,7 @@ def generate_word_frequency_chart(text_id, output_dir="."):
         bars = plt.bar(range(len(tokens)), frequencies, color='skyblue')
         plt.xlabel('Words')
         plt.ylabel('Frequency')
-        plt.title(f'Text No.{text_id} Word Frequency')
+        plt.title(f'Text #{text_id} Word Frequency')
         plt.xticks(range(len(tokens)), tokens, rotation=45, ha='right')
         
         # Display values on the bars
@@ -93,6 +95,89 @@ def generate_token_length_distribution(text_id, output_dir="."):
     except Exception as e:
         print(f"Error generating chart: {e}")
 
+def generate_word_cloud(text_id, output_dir="."):
+    """Generate word cloud chart"""
+    try:
+        conn = sqlite3.connect('analysis.db')
+        
+        # Query word frequency for word cloud
+        cursor = conn.execute("""
+            SELECT token, COUNT(*) as frequency 
+            FROM tokens 
+            WHERE text_id = ? 
+            GROUP BY token 
+            ORDER BY frequency DESC
+        """, (text_id,))
+        
+        data = cursor.fetchall()
+        if not data:
+            print(f"No token data found for text ID {text_id}")
+            return
+        
+        # Create frequency dictionary for word cloud
+        freq_dict = {row[0]: row[1] for row in data}
+        
+        # Generate word cloud
+        # Note: WordCloud may have issues with non-English characters on some systems
+        # We'll try to use a suitable font if available
+        try:
+            # Try to find a suitable font
+            font_path = None
+            try:
+                # For Windows systems, try to use SimHei font for Chinese characters
+                font_names = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS', 'DejaVu Sans']
+                for font_name in font_names:
+                    try:
+                        font_path = fm.findfont(fm.FontProperties(family=font_name))
+                        if font_path and os.path.exists(font_path):
+                            break
+                    except:
+                        continue
+            except:
+                pass
+            
+            if font_path and os.path.exists(font_path):
+                wordcloud = WordCloud(
+                    width=800, 
+                    height=400, 
+                    background_color='white',
+                    font_path=font_path,
+                    relative_scaling=0.5,
+                    random_state=42
+                )
+            else:
+                wordcloud = WordCloud(
+                    width=800, 
+                    height=400, 
+                    background_color='white',
+                    relative_scaling=0.5,
+                    random_state=42
+                )
+                
+            wordcloud.generate_from_frequencies(freq_dict)
+            
+            # Create word cloud plot
+            plt.figure(figsize=(12, 6))
+            plt.imshow(wordcloud, interpolation='bilinear')
+            plt.axis('off')
+            plt.title(f'Text #{text_id} Word Cloud')
+            
+            # Save word cloud
+            output_path = os.path.join(output_dir, f'word_cloud_{text_id}.png')
+            plt.tight_layout()
+            plt.savefig(output_path, dpi=300, bbox_inches='tight')
+            plt.show()
+            
+            conn.close()
+            print(f"Word cloud chart saved as {output_path}")
+        except Exception as wc_error:
+            conn.close()
+            print(f"Error generating word cloud: {wc_error}")
+            print("Note: This might be due to missing fonts or unsupported characters.")
+            
+    except Exception as e:
+        print(f"Error preparing word cloud data: {e}")
+
 def main():
     if len(sys.argv) < 2 or len(sys.argv) > 3:
         print("Usage: python vis.py <text_id> [output_dir]")
@@ -121,6 +206,7 @@ def main():
     print(f"Charts will be saved to: {os.path.abspath(output_dir)}")
     generate_word_frequency_chart(text_id, output_dir)
     generate_token_length_distribution(text_id, output_dir)
+    generate_word_cloud(text_id, output_dir)
 
 if __name__ == "__main__":
     main()
