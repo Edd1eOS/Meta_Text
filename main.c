@@ -11,25 +11,21 @@ int main() {
     char buf[MAX_TEXT_LEN];
     printf("Please enter text to analyze: ");
     
-    // 修复fgets调用
     if (fgets(buf, sizeof(buf), stdin) == NULL) {
         fprintf(stderr, "Failed to read input\n");
         return 1;
     }
     
-    // 去除可能的换行符
     size_t len = strlen(buf);
     if (len > 0 && buf[len-1] == '\n') {
         buf[len-1] = '\0';
     }
     
-    // 初始化数据库
     if (db_init(DB_PATH) != 0) {
         fprintf(stderr, "Database initialization failed\n");
         return 1;
     }
 
-    // 插入文本到数据库
     int text_id = db_insert_text(buf);
     if (text_id < 0) {
         fprintf(stderr, "Failed to insert text\n");
@@ -37,9 +33,8 @@ int main() {
         return 1;
     }
 
-    // 执行分词
     int result = tokenize(buf);
-    if (result != 0) {
+    if (result < 0) {
         fprintf(stderr, "Tokenization process error\n");
         db_close();
         return 1;
